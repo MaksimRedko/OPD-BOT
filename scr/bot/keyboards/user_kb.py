@@ -1,0 +1,13 @@
+from aiogram.types import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup
+)
+
+menu_student = InlineKeyboardMarkup(inline_keyboard=[
+    [InlineKeyboardButton(text="Новости", callback_data="news")],
+    [InlineKeyboardButton(text="Контакты для связи", callback_data="contacts_for_communication")],
+    [InlineKeyboardButton(text="Мой профиль", callback_data="my_profile")]
+])
+
+exit_to_menu = InlineKeyboardMarkup(
+    inline_keyboard=[[InlineKeyboardButton(text="Выйти в меню", callback_data="menu")]])
