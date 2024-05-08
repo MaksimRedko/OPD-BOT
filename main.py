@@ -9,6 +9,7 @@ from db.database import init_db
 from scr.bot.config import config
 from scr.bot.handlers.main_handler import router
 from scr.bot.handlers.admin_handler import admin_router
+from scr.bot.handlers.user_handler import user_router
 
 
 # Создаем класс-обработчик для добавления информации о нажатых кнопках
@@ -26,6 +27,7 @@ async def start():
     dp = Dispatcher(storage=MemoryStorage())
     dp.include_router(admin_router)
     dp.include_router(router)
+    dp.include_router(user_router)
 
     await bot.delete_webhook(drop_pending_updates=True)
 

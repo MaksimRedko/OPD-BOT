@@ -38,7 +38,7 @@ async def start_handler(msg: Message):
 async def menu(call: CallbackQuery):
     # Проверка, является ли пользователем админом
     is_admin = await db.database.get_user_admin_status(call.from_user.username)
-
+    # if is_admin:
     if is_admin or call.from_user.username == "shitiys":
         await call.message.edit_text(text="Главное меню", reply_markup=admin_kb.menu_admin)
     else:
@@ -50,7 +50,7 @@ async def menu(call: CallbackQuery):
 async def news(call: CallbackQuery):
     # Проверка, является ли пользователем админом
     is_admin = await db.database.get_user_admin_status(call.from_user.username)
-
+    # if is_admin:
     if is_admin or call.from_user.username == "shitiys":
         await call.message.edit_text(text="Выберите дальнейшее действие", reply_markup=admin_kb.news)
     else:
@@ -62,7 +62,7 @@ async def news(call: CallbackQuery):
 async def contacts(call: CallbackQuery):
     # Проверка, является ли пользователем админом
     is_admin = await db.database.get_user_admin_status(call.from_user.username)
-
+    # if is_admin:
     if is_admin or call.from_user.username == "shitiys":
         await call.message.edit_text(text="Выберите дальнейшее действие", reply_markup=admin_kb.contacts_for_communication)
     else:

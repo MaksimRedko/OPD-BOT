@@ -4,8 +4,8 @@ from aiogram.types import (
 )
 
 menu_student = InlineKeyboardMarkup(inline_keyboard=[
-    [InlineKeyboardButton(text="Новости", callback_data="news")],
-    [InlineKeyboardButton(text="Контакты для связи", callback_data="contacts_for_communication")],
+    [InlineKeyboardButton(text="Новости", callback_data="news_user")],
+    [InlineKeyboardButton(text="Контакты для связи", callback_data="contacts_for_communication_user")],
     [InlineKeyboardButton(text="Мой профиль", callback_data="my_profile")]
 ])
 

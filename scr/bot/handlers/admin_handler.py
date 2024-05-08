@@ -6,7 +6,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 import db.database
 from db.database import add_user
-from scr.bot import text
+from scr.bot.handlers.main_handler import menu
 from scr.bot.keyboards import admin_kb
 from scr.bot.utils.states import UserForm, ContactForm, NewsForm, Delete_user, UpdateUsersInfo, UpdateContactInfo
 from aiogram.types import (
@@ -86,6 +86,7 @@ async def show_contacts_with_pagination(call: CallbackQuery, page_number: int, a
         return text, admin_kb.contacts_for_communication
 
 
+# Функция для отображения информации о контакте в виде списка inline-кнопок
 async def show_contacts_info(call: CallbackQuery, state: FSMContext, msg: Message = None):
     data = await state.get_data()
     contact_name = data['get_contact_for_updating']  # Получение contact_name
@@ -175,6 +176,7 @@ async def change__contact_for_communication(call: CallbackQuery, state: FSMConte
     await call.message.edit_text(text=text, reply_markup=keyboard)
 
 
+# Выбран контакт из списка inline-кнопок, выводим информацию о нем, тоже в виде inline-кнопок
 @admin_router.callback_query(lambda c: c.data.startswith("update_contact_"))
 async def get_contact_for_updating(call: CallbackQuery, state: FSMContext):
     contact_name = call.data.replace("update_contact_contact_", "")
@@ -183,6 +185,7 @@ async def get_contact_for_updating(call: CallbackQuery, state: FSMContext):
     await show_contacts_info(call=call, state=state)
 
 
+# Выбран параметр из inline-кнопок(show_contacts_info), ждем новую информацию для обновления
 @admin_router.callback_query(StateFilter(UpdateContactInfo.waiting_param_for_update))
 async def get_param_for_update(call: CallbackQuery, state: FSMContext):
     key = call.data.replace("contact_waiting_for_update_", "")
@@ -194,6 +197,7 @@ async def get_param_for_update(call: CallbackQuery, state: FSMContext):
             [InlineKeyboardButton(text="Отменить", callback_data="change the contact for communication")]]))
 
 
+# Введена новая информация для обновления, обновляем и возвращаемся к списку параметров контакта
 @admin_router.message(StateFilter(UpdateContactInfo.waiting_new_value))
 async def get_new_value_for_updating_contacts_param(msg: Message, state: FSMContext):
     data = await state.get_data()
@@ -235,9 +239,12 @@ async def get_contact_for_delete(call: CallbackQuery):
 # endregion
 
 
-#region "Просмотреть существующие"
+# region "Просмотреть существующие"
 @admin_router.callback_query(F.data == "view contacts for communication")
 async def view_contacts(call: CallbackQuery, page_number=0):
+    print('view_contacts')
+
+    # Вывод всех контактов в виде inline-кнопок
     text, keyboard = await show_contacts_with_pagination(call=call, page_number=page_number, action="view_contact")
 
     if not text == "Список контактов пуст.":
@@ -245,28 +252,26 @@ async def view_contacts(call: CallbackQuery, page_number=0):
             [InlineKeyboardButton(text='Вернуться назад', callback_data="contacts_for_communication")])
     await call.message.edit_text(text=text, reply_markup=keyboard)
 
+
+# Была нажата соответсвующая кнопка, выводим информацию о контакте в виде сообщения
 @admin_router.callback_query(lambda c: c.data.startswith("view_contact_"))
-async def got_users_for_view(call: CallbackQuery):
+async def got_contact_for_view(call: CallbackQuery):
     contact_name = call.data.replace("view_contact_contact_", "")
     contact_info = await db.database.get_contacts_info(contact_name=contact_name)
     result = ""
     if contact_info:
         for key, value in contact_info.items():
             result += f"{key} : {value} \n"
-    back_button = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Вернуться назад", callback_data="view contacts for communication")]])
+    back_button = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Вернуться назад", callback_data="view contacts for communication")]])
     await call.message.edit_text(text=result, reply_markup=back_button)
-#endregion
+
+
+# endregion
 # endregion
 
 
-
-
-
-
-
-
-
-# region Обработчик "Пользователи"
+# region "Пользователи"
 
 @admin_router.callback_query(F.data == "users")
 async def update_profiles(call: CallbackQuery, state: FSMContext):
@@ -315,6 +320,7 @@ async def add_user_start(call: CallbackQuery, state: FSMContext):
                                  reply_markup=InlineKeyboardMarkup(inline_keyboard=[admin_kb.cancel_users]))
 
 
+# Введено username
 @admin_router.message(StateFilter(UserForm.username))
 async def got_username_wait_name(message: Message, state: FSMContext):
     # Сохраняем полученное текстовое сообщение как username пользователя
@@ -322,9 +328,11 @@ async def got_username_wait_name(message: Message, state: FSMContext):
 
     # Устанавливаем состояние в "name", ждем ввод имени
     await state.set_state(UserForm.name)
-    await message.answer("Введите имя пользователя:", reply_markup=InlineKeyboardMarkup(inline_keyboard=[admin_kb.cancel_users]))
+    await message.answer("Введите имя пользователя:",
+                         reply_markup=InlineKeyboardMarkup(inline_keyboard=[admin_kb.cancel_users]))
 
 
+# Введено name
 @admin_router.message(StateFilter(UserForm.name))
 async def got_name_wait_patronymic(message: Message, state: FSMContext):
     # Сохраняем полученное текстовое сообщение как имя пользователя
@@ -332,9 +340,11 @@ async def got_name_wait_patronymic(message: Message, state: FSMContext):
 
     # Устанавливаем состояние в "patronymic", ждем ввод отчества
     await state.set_state(UserForm.patronymic)
-    await message.answer("Введите отчество пользователя:", reply_markup=InlineKeyboardMarkup(inline_keyboard=[admin_kb.cancel_users]))
+    await message.answer("Введите отчество пользователя:",
+                         reply_markup=InlineKeyboardMarkup(inline_keyboard=[admin_kb.cancel_users]))
 
 
+# Введено patronymic
 @admin_router.message(StateFilter(UserForm.patronymic))
 async def got_patronymic_wait_surname(message: Message, state: FSMContext):
     # Сохраняем полученное текстовое сообщение как отчество пользователя
@@ -342,9 +352,11 @@ async def got_patronymic_wait_surname(message: Message, state: FSMContext):
 
     # Устанавливаем состояние в "surname", ждем ввод фамилии
     await state.set_state(UserForm.surname)
-    await message.answer("Введите фамилию пользователя:", reply_markup=InlineKeyboardMarkup(inline_keyboard=[admin_kb.cancel_users]))
+    await message.answer("Введите фамилию пользователя:",
+                         reply_markup=InlineKeyboardMarkup(inline_keyboard=[admin_kb.cancel_users]))
 
 
+# Введено surname
 @admin_router.message(StateFilter(UserForm.surname))
 async def got_surname_wait_age(message: Message, state: FSMContext):
     # Сохраняем полученное текстовое сообщение как фамилию пользователя
@@ -352,9 +364,11 @@ async def got_surname_wait_age(message: Message, state: FSMContext):
 
     # Устанавливаем состояние в "age", ждем ввод возраста
     await state.set_state(UserForm.age)
-    await message.answer("Введите возраст пользователя:", reply_markup=InlineKeyboardMarkup(inline_keyboard=[admin_kb.cancel_users]))
+    await message.answer("Введите возраст пользователя:",
+                         reply_markup=InlineKeyboardMarkup(inline_keyboard=[admin_kb.cancel_users]))
 
 
+# Введено age
 @admin_router.message(StateFilter(UserForm.age))
 async def got_age_wait_direction_of_study(message: Message, state: FSMContext):
     # Сохраняем полученное текстовое сообщение как возраст пользователя
@@ -362,9 +376,11 @@ async def got_age_wait_direction_of_study(message: Message, state: FSMContext):
 
     # Устанавливаем состояние в "direction_of_study", ждем направление обучения
     await state.set_state(UserForm.direction_of_study)
-    await message.answer("Введите направление обучения пользователя:", reply_markup=InlineKeyboardMarkup(inline_keyboard=[admin_kb.cancel_users]))
+    await message.answer("Введите направление обучения пользователя:",
+                         reply_markup=InlineKeyboardMarkup(inline_keyboard=[admin_kb.cancel_users]))
 
 
+# Введено direction_of_study
 @admin_router.message(StateFilter(UserForm.direction_of_study))
 async def got_direction_of_study_wait_phone(msg: Message, state: FSMContext):
     # Сохраняем полученное текстовое сообщение как направление обучения пользователя
@@ -372,9 +388,11 @@ async def got_direction_of_study_wait_phone(msg: Message, state: FSMContext):
 
     # Устанавливаем состояние в "phone", ждем телефон
     await state.set_state(UserForm.phone)
-    await msg.answer("Введите телефон пользователя:", reply_markup=InlineKeyboardMarkup(inline_keyboard=[admin_kb.cancel_users]))
+    await msg.answer("Введите телефон пользователя:",
+                     reply_markup=InlineKeyboardMarkup(inline_keyboard=[admin_kb.cancel_users]))
 
 
+# Введено phone
 @admin_router.message(StateFilter(UserForm.phone))
 async def got_phone_wait_post(message: Message, state: FSMContext):
     # Сохраняем полученное текстовое сообщение как телефон пользователя
@@ -382,9 +400,11 @@ async def got_phone_wait_post(message: Message, state: FSMContext):
 
     # Устанавливаем состояние в "post", ждем почту
     await state.set_state(UserForm.post)
-    await message.answer("Введите почту пользователя:", reply_markup=InlineKeyboardMarkup(inline_keyboard=[admin_kb.cancel_users]))
+    await message.answer("Введите почту пользователя:",
+                         reply_markup=InlineKeyboardMarkup(inline_keyboard=[admin_kb.cancel_users]))
 
 
+# Введено post
 @admin_router.message(StateFilter(UserForm.post))
 async def got_post_wait_admin_satus(message: Message, state: FSMContext):
     # Сохраняем полученное текстовое сообщение как почту пользователя
@@ -402,6 +422,7 @@ async def got_post_wait_admin_satus(message: Message, state: FSMContext):
     await message.answer(text="Сделать данного пользователя администратором?", reply_markup=buttons)
 
 
+# Введено admin_status
 @admin_router.callback_query(StateFilter(UserForm.admin_status))
 async def got_admin_status_add_to_db(call: CallbackQuery, state: FSMContext):
     # Сохраняем нажатую кнопку как админ-статус пользователя
@@ -434,6 +455,7 @@ async def delete_user(call: CallbackQuery):
     await call.message.edit_text("Выберите способ удаления пользователя:", reply_markup=admin_kb.delete_user)
 
 
+# Выбран способ удаления через написание юзернейма, ждем ввод от пользователя
 @admin_router.callback_query(F.data == "delete_user_by_username")
 async def delete_user_by_username_or_name(call: CallbackQuery, state: FSMContext):
     # Ждем ввода username которого надо удалить
@@ -441,6 +463,7 @@ async def delete_user_by_username_or_name(call: CallbackQuery, state: FSMContext
     await call.message.edit_text("Напишите username пользователя, которого хотите удалить:")
 
 
+# Выбран способ выбора из списка inline-кнопок, выводим список пользователей
 @admin_router.callback_query(F.data == "show_users_for_delete")
 async def show_users_for_delete(call: CallbackQuery, page_number=0):
     # Выводим список пользователей для удаления
@@ -492,6 +515,7 @@ async def update_user_info(call: CallbackQuery, state: FSMContext, page_number=0
     await call.message.edit_text(text=text, reply_markup=keyboard)
 
 
+# Выбран пользователь из списка inline-кнопок, выводим список параметров пользователя, в виде списка inline-кнопок
 @admin_router.callback_query(lambda c: c.data.startswith("update_user_"))
 async def update_user_handler(call: CallbackQuery, state: FSMContext):
     if call.data == "update_user_info":
@@ -502,6 +526,7 @@ async def update_user_handler(call: CallbackQuery, state: FSMContext):
     await show_users_info(call=call, state=state)
 
 
+# Функция вывода информации о пользователе, в виде inline-кнопок
 @admin_router.callback_query(StateFilter(UpdateUsersInfo.waiting_choices_for_update))
 async def show_users_info(call: CallbackQuery, state: FSMContext, msg: Message = None):
     print("Получение информации о пользователе...")
@@ -525,6 +550,7 @@ async def show_users_info(call: CallbackQuery, state: FSMContext, msg: Message =
         await call.message.edit_text(text="Выберите, что хотите обновить", reply_markup=keyboard)
 
 
+# Выбран параметр, ждем ввода новой информации
 @admin_router.callback_query(lambda c: c.data.startswith("waiting_for_update_"))
 async def waiting_new_user_info(call: CallbackQuery, state: FSMContext):
     value = call.data.replace("waiting_for_update_", "")  # Получаем названия пункта, которsq хотим обновить
@@ -552,6 +578,7 @@ async def waiting_new_user_info(call: CallbackQuery, state: FSMContext):
 #     await call.message.edit_text(text="Введите новую информацию", reply_markup=cancel_button)
 
 
+# Информация получена, обновляем соответсвующий параметр и выводим список параметров пользователя
 @admin_router.message(StateFilter(UpdateUsersInfo.got_new_value))
 async def got_new_user_info_and_update(msg: Message, state: FSMContext):
     data = await state.get_data()
@@ -566,9 +593,9 @@ async def got_new_user_info_and_update(msg: Message, state: FSMContext):
 
 # endregion
 
-#region "Просмотреть существующие"
+# region "Просмотреть существующие"
 @admin_router.callback_query(F.data == "view users")
-async def view_users(call: CallbackQuery, page_number = 0):
+async def view_users(call: CallbackQuery, page_number=0):
     text, keyboard = await show_users_with_pagination(call=call, page_number=page_number, action="view_user")
 
     if not text == "Список пользователей пуст.":
@@ -576,6 +603,8 @@ async def view_users(call: CallbackQuery, page_number = 0):
             [InlineKeyboardButton(text='Отменить удаление пользователя', callback_data="users")])
     await call.message.edit_text(text=text, reply_markup=keyboard)
 
+
+# Выбран пользователь из списка inline-кнопок, выводим информацию о нем, в виде сообщения
 @admin_router.callback_query(lambda c: c.data.startswith("view_user_"))
 async def got_users_for_view(call: CallbackQuery):
     username = call.data.replace("view_user_user_", "")
@@ -584,20 +613,24 @@ async def got_users_for_view(call: CallbackQuery):
     if user_info:
         for key, value in user_info.items():
             result += f"{key} : {value} \n"
-    back_button = InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="Вернуться назад", callback_data="view users")]])
+    back_button = InlineKeyboardMarkup(
+        inline_keyboard=[[InlineKeyboardButton(text="Вернуться назад", callback_data="view users")]])
     await call.message.edit_text(text=result, reply_markup=back_button)
 
-#endregoin
+
+# endregoin
+# endregion
+
 # endregion
 
 # region "Новости"
-
 
 @admin_router.callback_query(F.data == "news")
 async def write_news(call: CallbackQuery, state: FSMContext):
     await call.message.edit_text(text="Выберите дальнейшее действие", reply_markup=admin_kb.news)
 
 
+# Выбор получателя для новости
 @admin_router.callback_query(F.data == "select_recipient")
 async def select_recipient(call: CallbackQuery, state: FSMContext):
     await state.set_state(NewsForm.waiting_for_recipients)
@@ -605,6 +638,7 @@ async def select_recipient(call: CallbackQuery, state: FSMContext):
                                  reply_markup=InlineKeyboardMarkup(inline_keyboard=[admin_kb.cancel_news]))
 
 
+# Получили пользователей, выводим меню новостей
 @admin_router.message(StateFilter(NewsForm.waiting_for_recipients))
 async def got_recipients(msg: Message, state: FSMContext):
     await state.update_data(waiting_for_recipients=msg.text.replace(" ", "").split(","))
@@ -613,6 +647,7 @@ async def got_recipients(msg: Message, state: FSMContext):
     await msg.answer(text="Пользователи получены", reply_markup=admin_kb.news)
 
 
+# Ждем ввод новости/сообщения от пользователя
 @admin_router.callback_query(F.data == "write_text_news")
 async def write_text_news(call: CallbackQuery, state: FSMContext):
     await state.set_state(NewsForm.waiting_for_text)
@@ -620,12 +655,14 @@ async def write_text_news(call: CallbackQuery, state: FSMContext):
                                  reply_markup=InlineKeyboardMarkup(inline_keyboard=[admin_kb.cancel_news]))
 
 
+# Получен текст сообщения от пользователя, возвращаем его обратно в меню новостей
 @admin_router.message(StateFilter(NewsForm.waiting_for_text))
 async def got_text_of_news(msg: Message, state: FSMContext):
     await state.update_data(waiting_for_text=msg.text)
     await msg.answer(text="Текст новости сохранен", reply_markup=admin_kb.news)
 
 
+# Вывод информации о новости, перед отправкой
 @admin_router.callback_query(F.data == "send_news")
 async def send_news(call: CallbackQuery, state: FSMContext):
     news_data = await state.get_data()
@@ -646,22 +683,96 @@ async def send_news(call: CallbackQuery, state: FSMContext):
     await call.message.edit_text(text=(text_news + recipients_list), reply_markup=admin_kb.send_news)
 
 
+# Отправка сообщения всем указанным пользователям( всем, кто начал чат с ботом)
 @admin_router.callback_query(F.data == "sending_news")
 async def sending_news(call: CallbackQuery, state: FSMContext):
     news_data = await state.get_data()
     text_news = news_data["waiting_for_text"]
+    date = time.strftime("%M:%H|%d.%m.%Y", time.localtime())
+    is_read_button = InlineKeyboardMarkup(
+        inline_keyboard=[[InlineKeyboardButton(text="Я прочитал/прочитала", callback_data=f"i_read_{date}")]])
     usernames = []
     for username in news_data["waiting_for_recipients"]:
         user_data = await db.database.get_users_info_(username)
         if user_data:
             usernames.append([user_data["username"], user_data["id_chat"]])
 
-    await db.database.add_news(text=text_news, recipients=str(usernames), date=time.strftime("%d.%m.%Y", time.localtime()))
+    await db.database.add_news(text=text_news, recipients=str(usernames), date=date)
     for username in usernames:
         try:
             print(username[1])
-            await call.bot.send_message(chat_id=username[1], text=text_news)
+            await call.bot.send_message(chat_id=username[1],
+                                        text=text_news + "\n\nЕсли прочитали, нажмите на кнопку ниже.",
+                                        reply_markup=is_read_button)
         except Exception as e:
             print(f"Ошибка при отправке сообщения пользователю {username}: {e}")
     await call.message.edit_text(text="Новость доставлена", reply_markup=admin_kb.news)
-# endregion
+
+
+# Пользователь нажал на "я прочитал"
+@admin_router.callback_query(lambda c: c.data.startswith("i_read_"))
+async def get_who_read(call: CallbackQuery):
+    # Получаем дату отправки сообщения, которую прочитал пользователь
+    when_read = call.data.replace("i_read_", "")
+
+    # Обновляем запись в базе данных, отмечая пользователя, который прочитал новость
+    await db.database.read_news(date=when_read, chat_id=call.message.chat.id)
+
+    # Переход на главное меню
+    await menu(call=call)
+
+
+# Функция вывода новостей с пагинацией
+async def show_news_with_pagination(call: CallbackQuery, page_number: int, action: str):
+    # Получаем список новостей
+    news_list = await db.database.get_news_with_pagination(page_number, USERS_PER_PAGE)
+
+    if news_list:
+        # Формируем список кнопок с новостями
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[])
+
+        for news in news_list:
+            text = news[1]
+            date = news[2]
+            recipients = news[3]
+            read_recipients = news[4]
+            button = InlineKeyboardButton(text=f"Новость от {date}",
+                                          callback_data=f"{action}_of_{date}")
+            keyboard.inline_keyboard.append([button])
+            print(button.text, button.callback_data)
+        # Добавляем кнопки переключения страниц
+        prev_button = InlineKeyboardButton(text="<< Пред. стр.", callback_data=f"prev_page_{page_number}_page_{action}")
+        next_button = InlineKeyboardButton(text="След. стр. >>", callback_data=f"next_page_{page_number}_page_{action}")
+
+        keyboard.inline_keyboard.append([prev_button, next_button])
+        text = "Выберите новость для просмотра:"
+        return text, keyboard
+    else:
+        text = "Список новостей пуст."
+        return text, admin_kb.news
+
+
+# Вывод списка новостей в виде inline-кнопок
+@admin_router.callback_query(F.data == "view news")
+async def view_news(call: CallbackQuery, page_number=0):
+    text, keyboard = await show_news_with_pagination(call=call, page_number=page_number, action="view_news")
+
+    if not text == "Список новостей пуст.":
+        keyboard.inline_keyboard.append(
+            [InlineKeyboardButton(text='Назад', callback_data="news")])
+    await call.message.edit_text(text=text, reply_markup=keyboard)
+
+
+# Вывод информации о новости, выбранной из списка
+@admin_router.callback_query(lambda c: c.data.startswith("view_news_"))
+async def got_news_for_view(call: CallbackQuery):
+    date = call.data.replace("view_news_of_", "")
+    news_info = await db.database.get_news_info(date=date)
+    result = ""
+    if news_info:
+        for key, value in news_info.items():
+            result += f"{key} : {value} \n"
+    back_button = InlineKeyboardMarkup(
+        inline_keyboard=[[InlineKeyboardButton(text="Вернуться назад", callback_data="view news")]])
+    await call.message.edit_text(text=result, reply_markup=back_button)
+

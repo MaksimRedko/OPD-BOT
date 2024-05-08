@@ -16,7 +16,8 @@ news = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="Выбрать получателя", callback_data="select_recipient"),
      InlineKeyboardButton(text="Написать сообщение/новость", callback_data="write_text_news")],
     [InlineKeyboardButton(text="Проверить и отослать новость", callback_data="send_news"),
-     InlineKeyboardButton(text="Выйти в меню", callback_data="menu")]
+     InlineKeyboardButton(text="Просмотреть новости", callback_data="view news")],
+     [InlineKeyboardButton(text="Выйти в меню", callback_data="menu")]
 ])
 
 # Кнопка отмены для Новостей

@@ -29,10 +29,11 @@ def init_db():
                  phone TEXT)''')
 
     c.execute('''CREATE TABLE IF NOT EXISTS news
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                 news_text TEXT,
-                 publish_date TEXT,
-                 recipients TEXT)''')
+                     (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                     news_text TEXT,
+                     publish_date TEXT,
+                     recipients TEXT,
+                     who_read TEXT)''')
 
     conn.commit()
     conn.close()
@@ -146,6 +147,21 @@ async def get_contacts_with_pagination(page_number, page_size):
     return contacts
 
 
+async def get_news_with_pagination(page_number, page_size):
+    conn = sqlite3.connect('students.db')
+    c = conn.cursor()
+    page_number = 0 if page_number == 0 else page_number
+    # Вычисляем смещение для текущей страницы
+    offset = (page_number - 1) * page_size
+
+    c.execute('''SELECT * FROM news LIMIT ? OFFSET ?''', (page_size, offset))
+    news = c.fetchall()
+
+    conn.close()
+
+    return news
+
+
 async def get_contacts_info(contact_name):
     conn = sqlite3.connect('students.db')
     c = conn.cursor()
@@ -203,6 +219,25 @@ async def get_users_info_(username):
         return None  # Возвращаем None, если пользователь с таким username не найден
 
 
+async def get_news_info(date):
+    conn = sqlite3.connect('students.db')
+    c = conn.cursor()
+    c.execute('''SELECT * FROM news WHERE publish_date = ?''', (date,))
+    news_info = c.fetchone()  # Получаем только одну строку, так как ожидаем, что username уникален
+
+    conn.close()
+
+    if news_info:
+        # Формируем словарь, где названия столбцов будут ключами
+        columns = [col[0] for col in c.description]
+        print(columns)
+        print(news_info)
+        news_dict = dict(zip(columns, news_info))
+        return news_dict
+    else:
+        return None  # Возвращаем None, если пользователь с таким username не найден
+
+
 async def update_user_info(username, key, new_value):
     conn = sqlite3.connect('students.db')
     c = conn.cursor()
@@ -247,5 +282,27 @@ async def add_news(text, date, recipients):
     c = conn.cursor()
     c.execute('''INSERT INTO news (news_text, publish_date, recipients) VALUES (?, ?, ?)''',
               (text, date, recipients))
+    conn.commit()
+    conn.close()
+
+
+async def read_news(date, chat_id):
+    conn = sqlite3.connect('students.db')
+    c = conn.cursor()
+
+    # Получаем текущие данные из базы данных
+    c.execute('''SELECT who_read FROM news WHERE publish_date = ?''', (date,))
+    existing_who_read = c.fetchone()[0]
+    print(existing_who_read)
+
+    # Добавляем к текущим значениям нового пользователя
+    if existing_who_read:
+        new_who_read = existing_who_read + ', ' + str(chat_id)
+    else:
+        new_who_read = str(chat_id)
+
+    # Обновляем запись в базе данных с новыми значениями
+    c.execute('''UPDATE news SET who_read = ? WHERE publish_date = ?''', (new_who_read, date))
+
     conn.commit()
     conn.close()
