@@ -96,13 +96,9 @@ async def show_contacts_info(call: CallbackQuery, state: FSMContext, msg: Messag
     await state.set_state(UpdateContactInfo.waiting_param_for_update)
     keyboard = InlineKeyboardMarkup(inline_keyboard=[])
     for key, value in contact_info.items():
-        print(key, value)
-        print()
         button = InlineKeyboardButton(text=f"{key.capitalize()}: {value}",
                                       callback_data=f"contact_waiting_for_update_{key}")
         keyboard.inline_keyboard.append([button])
-        print(button)
-        print()
     keyboard.inline_keyboard.append(
         [InlineKeyboardButton(text="Вернуться назад", callback_data="change the contact for communication")])
     if call is None:
@@ -171,8 +167,7 @@ async def change__contact_for_communication(call: CallbackQuery, state: FSMConte
     await state.set_state(UpdateContactInfo.get_contact_for_updating)
     text, keyboard = await show_contacts_with_pagination(call=call, page_number=page_number, action="update_contact")
     if not text == "Список пользователей пуст.":
-        keyboard.inline_keyboard.append(
-            [InlineKeyboardButton(text='Отменить изменение', callback_data="contacts_for_communication")])
+        await call.message.edit_text(text=text, reply_markup=admin_kb.contacts_for_communication)
     await call.message.edit_text(text=text, reply_markup=keyboard)
 
 
@@ -221,7 +216,8 @@ async def delete_contact_for_communication(call: CallbackQuery, page_number=0):
     text, keyboard = await show_contacts_with_pagination(call=call, page_number=page_number, action="delete_contact")
 
     if not text == "Список контактов пуст.":
-        keyboard.inline_keyboard.append(admin_kb.cancel_contacts_for_communication)
+        await call.message.edit_text(text=text, reply_markup=admin_kb.contacts_for_communication)
+
     await call.message.edit_text(text=text, reply_markup=keyboard)
 
 
@@ -242,14 +238,11 @@ async def get_contact_for_delete(call: CallbackQuery):
 # region "Просмотреть существующие"
 @admin_router.callback_query(F.data == "view contacts for communication")
 async def view_contacts(call: CallbackQuery, page_number=0):
-    print('view_contacts')
-
     # Вывод всех контактов в виде inline-кнопок
     text, keyboard = await show_contacts_with_pagination(call=call, page_number=page_number, action="view_contact")
 
     if not text == "Список контактов пуст.":
-        keyboard.inline_keyboard.append(
-            [InlineKeyboardButton(text='Вернуться назад', callback_data="contacts_for_communication")])
+        await call.message.edit_text(text=text, reply_markup=admin_kb.contacts_for_communication)
     await call.message.edit_text(text=text, reply_markup=keyboard)
 
 
@@ -460,7 +453,8 @@ async def delete_user(call: CallbackQuery):
 async def delete_user_by_username_or_name(call: CallbackQuery, state: FSMContext):
     # Ждем ввода username которого надо удалить
     await state.set_state(state=Delete_user.waiting_name_user_for_delete)
-    await call.message.edit_text("Напишите username пользователя, которого хотите удалить:")
+    await call.message.edit_text(text="Напишите username пользователя, которого хотите удалить:",
+                                 reply_markup=InlineKeyboardMarkup(inline_keyboard=[admin_kb.cancel_users]))
 
 
 # Выбран способ выбора из списка inline-кнопок, выводим список пользователей
@@ -470,8 +464,8 @@ async def show_users_for_delete(call: CallbackQuery, page_number=0):
     text, keyboard = await show_users_with_pagination(call, page_number, action="delete_user")
 
     if not text == "Список пользователей пуст.":
-        keyboard.inline_keyboard.append(
-            [InlineKeyboardButton(text='Отменить удаление пользователя', callback_data="users")])
+        await call.message.edit_text(text=text, reply_markup=admin_kb.users)
+    keyboard.inline_keyboard.append(admin_kb.cancel_users)
     await call.message.edit_text(text=text, reply_markup=keyboard)
 
 
@@ -489,11 +483,6 @@ async def got_user_from_inline_button(call: CallbackQuery, state: FSMContext):
 # Обработчик ввода username пользователя путем ввода в чат
 @admin_router.message(StateFilter(Delete_user.waiting_name_user_for_delete))
 async def deleting_user_from_message(msg: Message, state: FSMContext):
-    # # Сохраняем данные из текста сообщения как
-    # await state.update_data(waiting_name_user_for_delete=msg.text)
-    # # Получаем сохраненные данные
-    # user_data = await state.get_data()
-
     # Удаляем пользователя
     await db.database.delete_user(msg.text)
 
@@ -529,13 +518,9 @@ async def update_user_handler(call: CallbackQuery, state: FSMContext):
 # Функция вывода информации о пользователе, в виде inline-кнопок
 @admin_router.callback_query(StateFilter(UpdateUsersInfo.waiting_choices_for_update))
 async def show_users_info(call: CallbackQuery, state: FSMContext, msg: Message = None):
-    print("Получение информации о пользователе...")
     data = await state.get_data()
     username = data['get_username_for_updating']  # Получение username из сохранённых данных
-    print(f"Username пользователя для обновления: {username}")
     user_info = await db.database.get_users_info_(username=username)
-    print("Информация о пользователе получена:")
-    print(user_info)
     await state.set_state(UpdateUsersInfo.got_choices_for_update)
     keyboard = InlineKeyboardMarkup(inline_keyboard=[])
     for key, value in user_info.items():
@@ -554,29 +539,13 @@ async def show_users_info(call: CallbackQuery, state: FSMContext, msg: Message =
 @admin_router.callback_query(lambda c: c.data.startswith("waiting_for_update_"))
 async def waiting_new_user_info(call: CallbackQuery, state: FSMContext):
     value = call.data.replace("waiting_for_update_", "")  # Получаем названия пункта, которsq хотим обновить
-
     await state.update_data(waiting_choices_for_update=value)
     await state.set_state(UpdateUsersInfo.got_new_value)
     data = await state.get_data()  # Использование await для получения данных
     username = data['get_username_for_updating']  # Получение username из сохранённых данных
-    print(username)
     cancel_button = InlineKeyboardMarkup(
         inline_keyboard=[[InlineKeyboardButton(text="Отменить изменение", callback_data=f"update_user_{username}")]])
-    print("собираемся ответить")
     await call.message.edit_text(text="Введите новую информацию", reply_markup=cancel_button)
-
-
-# @admin_router.callback_query(StateFilter(UpdateUsersInfo.got_choices_for_update))
-# async def waiting_new_user_info(call: CallbackQuery, state: FSMContext):
-#     value = call.data.replace("waiting_for_update_", "")  # Получаем названия пункта, которsq хотим обновить
-#     print("waiting_new_user_info выполнилась")
-#     await state.update_data(waiting_choices_for_update=value)
-#     await state.set_state(UpdateUsersInfo.got_new_value)
-#     cancel_button = InlineKeyboardMarkup(
-#         inline_keyboard=[[InlineKeyboardButton(text="Отменить изменение", callback_data="update_user_")]])
-#     print("собираемся ответить")
-#     await call.message.edit_text(text="Введите новую информацию", reply_markup=cancel_button)
-
 
 # Информация получена, обновляем соответсвующий параметр и выводим список параметров пользователя
 @admin_router.message(StateFilter(UpdateUsersInfo.got_new_value))
@@ -599,8 +568,8 @@ async def view_users(call: CallbackQuery, page_number=0):
     text, keyboard = await show_users_with_pagination(call=call, page_number=page_number, action="view_user")
 
     if not text == "Список пользователей пуст.":
-        keyboard.inline_keyboard.append(
-            [InlineKeyboardButton(text='Отменить удаление пользователя', callback_data="users")])
+        await call.message.edit_text(text=text, reply_markup=admin_kb.users)
+    keyboard.inline_keyboard.append(admin_kb.cancel_users)
     await call.message.edit_text(text=text, reply_markup=keyboard)
 
 
@@ -643,7 +612,6 @@ async def select_recipient(call: CallbackQuery, state: FSMContext):
 async def got_recipients(msg: Message, state: FSMContext):
     await state.update_data(waiting_for_recipients=msg.text.replace(" ", "").split(","))
     data = await state.get_data()
-    print(data["waiting_for_recipients"])
     await msg.answer(text="Пользователи получены", reply_markup=admin_kb.news)
 
 
@@ -666,15 +634,12 @@ async def got_text_of_news(msg: Message, state: FSMContext):
 @admin_router.callback_query(F.data == "send_news")
 async def send_news(call: CallbackQuery, state: FSMContext):
     news_data = await state.get_data()
-    print(news_data["waiting_for_recipients"])
     text_news = "Текст новости:\n" + news_data["waiting_for_text"] + "\n"
     user_data_list = []
     for username in news_data["waiting_for_recipients"]:
         user_data = await db.database.get_users_info_(username)
         if user_data:
             user_data_list.append(user_data)
-        else:
-            print("Ошибочка бля")
     recipients_list = "Пользователи:\n"
     for user_data in user_data_list:
         for key, value in user_data.items():
@@ -775,4 +740,3 @@ async def got_news_for_view(call: CallbackQuery):
     back_button = InlineKeyboardMarkup(
         inline_keyboard=[[InlineKeyboardButton(text="Вернуться назад", callback_data="view news")]])
     await call.message.edit_text(text=result, reply_markup=back_button)
-

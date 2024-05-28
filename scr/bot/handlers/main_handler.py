@@ -10,9 +10,6 @@ import scr.bot.utils.utils as utils_
 router = Router()
 
 
-# ADMIN_ID = 827843446
-
-
 # Обработка команды /start
 @router.message(Command("start"))
 async def start_handler(msg: Message):

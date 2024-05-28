@@ -51,7 +51,7 @@ cancel_users = [InlineKeyboardButton(text='Отменить', callback_data="use
 delete_user = InlineKeyboardMarkup(inline_keyboard=[
     [InlineKeyboardButton(text="Удалить по username", callback_data="delete_user_by_username"),
      InlineKeyboardButton(text="Выбрать из списка пользователей", callback_data="show_users_for_delete")],
-    [InlineKeyboardButton(text='Отменить', callback_data="delete user")]
+    [InlineKeyboardButton(text='Отменить', callback_data="users")]
 ])
 
 # Клавиатура "Мой профиль"

@@ -27,7 +27,6 @@ async def news_user(call: CallbackQuery, page_number=0):
 
 @user_router.callback_query(lambda c: c.data.startswith("view_newsuser"))
 async def got_news_for_view(call: CallbackQuery):
-    print(call.data)
     date = call.data.replace("view_newsuser_of_", "")
     news_info = await db.get_news_info(date=date)
     result = ""
@@ -42,18 +41,15 @@ async def got_news_for_view(call: CallbackQuery):
 @user_router.callback_query(F.data == "contacts_for_communication_user")
 async def contacts_for_communication_user(call: CallbackQuery, page_number=0):
     text, keyboard = await show_contacts_with_pagination(call=call, page_number=page_number, action="view_contactuser")
-    print(keyboard.inline_keyboard)
 
     if not text == "Список контактов пуст.":
         keyboard.inline_keyboard.append(
             [InlineKeyboardButton(text='Вернуться назад', callback_data="menu")])
-    print("НОрм НОРм выводим список контактов")
     await call.message.edit_text(text=text, reply_markup=keyboard)
 
 
 @user_router.callback_query(lambda c: c.data.startswith("view_contactuser"))
 async def got_contact_for_view(call: CallbackQuery):
-    print("НОрм НОРм список контактов вывелся, щас выводим инфу про контакт")
     contact_name = call.data.replace("view_contactuser_contact_", "")
     contact_info = await db.get_contacts_info(contact_name=contact_name)
     back_button = InlineKeyboardMarkup(inline_keyboard=[

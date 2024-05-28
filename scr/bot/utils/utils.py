@@ -1,4 +1,3 @@
-import psycopg2
 from aiogram.types import CallbackQuery
 import db.database as db
 
@@ -11,23 +10,6 @@ async def show_contacts():
     contacts = [1, '2', [3]]
     result = '\n'.join(f'Контакт {index + 1}: {str(contact)}' for index, contact in enumerate(contacts))
     return result
-
-
-async def show_personal_messanges():
-    pass
-
-
-async def update_contacts():
-    pass
-
-
-async def write_news():
-    pass
-
-
-async def add_personal_messages():
-    pass
-
 
 def add_student(username, name, patronymic, surname, age, direction_of_study, phone, post, admin_status):
     db.add_user(username=username,

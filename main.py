@@ -6,7 +6,6 @@ from aiogram.enums.parse_mode import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 from db.database import init_db
 
-from scr.bot.config import config
 from scr.bot.handlers.main_handler import router
 from scr.bot.handlers.admin_handler import admin_router
 from scr.bot.handlers.user_handler import user_router
@@ -23,7 +22,7 @@ class ButtonClickHandler(logging.Handler):
 
 
 async def start():
-    bot = Bot(token=config.bot_token.get_secret_value(), parse_mode=ParseMode.HTML)
+    bot = Bot(token='6548451315:AAGSYOIFxn9avnYbAEzaHLQMtMEqptugxL4', parse_mode=ParseMode.HTML)
     dp = Dispatcher(storage=MemoryStorage())
     dp.include_router(admin_router)
     dp.include_router(router)
