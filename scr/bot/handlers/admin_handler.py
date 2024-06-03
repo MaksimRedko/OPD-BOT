@@ -166,9 +166,10 @@ async def get_contacts_email_and_save_to_db(msg: Message, state: FSMContext):
 async def change__contact_for_communication(call: CallbackQuery, state: FSMContext, page_number=0):
     await state.set_state(UpdateContactInfo.get_contact_for_updating)
     text, keyboard = await show_contacts_with_pagination(call=call, page_number=page_number, action="update_contact")
-    if not text == "Список пользователей пуст.":
+    if text == "Список пользователей пуст.":
         await call.message.edit_text(text=text, reply_markup=admin_kb.contacts_for_communication)
-    await call.message.edit_text(text=text, reply_markup=keyboard)
+    else:
+        await call.message.edit_text(text=text, reply_markup=keyboard)
 
 
 # Выбран контакт из списка inline-кнопок, выводим информацию о нем, тоже в виде inline-кнопок
@@ -215,10 +216,10 @@ async def delete_contact_for_communication(call: CallbackQuery, page_number=0):
     # Получаем список контактов в виде списка из inline-кнопок
     text, keyboard = await show_contacts_with_pagination(call=call, page_number=page_number, action="delete_contact")
 
-    if not text == "Список контактов пуст.":
+    if text == "Список контактов пуст.":
         await call.message.edit_text(text=text, reply_markup=admin_kb.contacts_for_communication)
-
-    await call.message.edit_text(text=text, reply_markup=keyboard)
+    else:
+        await call.message.edit_text(text=text, reply_markup=keyboard)
 
 
 # Если произошло нажатие на inline-кнопку из списка контактов
@@ -241,9 +242,10 @@ async def view_contacts(call: CallbackQuery, page_number=0):
     # Вывод всех контактов в виде inline-кнопок
     text, keyboard = await show_contacts_with_pagination(call=call, page_number=page_number, action="view_contact")
 
-    if not text == "Список контактов пуст.":
+    if text == "Список контактов пуст.":
         await call.message.edit_text(text=text, reply_markup=admin_kb.contacts_for_communication)
-    await call.message.edit_text(text=text, reply_markup=keyboard)
+    else:
+        await call.message.edit_text(text=text, reply_markup=keyboard)
 
 
 # Была нажата соответсвующая кнопка, выводим информацию о контакте в виде сообщения
@@ -293,6 +295,7 @@ async def show_users_with_pagination(call: CallbackQuery, page_number: int, acti
         prev_button = InlineKeyboardButton(text="<< Пред.", callback_data=f"prev_page_{page_number}_page_{action}")
         next_button = InlineKeyboardButton(text="След. >>", callback_data=f"next_page_{page_number}_page_{action}")
         keyboard.inline_keyboard.append([prev_button, next_button])
+
 
         text = "Выберите пользователя:"
         return text, keyboard
@@ -463,10 +466,11 @@ async def show_users_for_delete(call: CallbackQuery, page_number=0):
     # Выводим список пользователей для удаления
     text, keyboard = await show_users_with_pagination(call, page_number, action="delete_user")
 
-    if not text == "Список пользователей пуст.":
+    if text == "Список пользователей пуст.":
         await call.message.edit_text(text=text, reply_markup=admin_kb.users)
-    keyboard.inline_keyboard.append(admin_kb.cancel_users)
-    await call.message.edit_text(text=text, reply_markup=keyboard)
+    else:
+        keyboard.inline_keyboard.append(admin_kb.cancel_users)
+        await call.message.edit_text(text=text, reply_markup=keyboard)
 
 
 # Обработчик нажатия на пользователя из списка inline-кнопок
@@ -498,10 +502,12 @@ async def deleting_user_from_message(msg: Message, state: FSMContext):
 async def update_user_info(call: CallbackQuery, state: FSMContext, page_number=0):
     await state.set_state(UpdateUsersInfo.get_username_for_updating)
     text, keyboard = await show_users_with_pagination(call=call, page_number=page_number, action="update_user")
-    if not text == "Список пользователей пуст.":
-        keyboard.inline_keyboard.append(
-            [InlineKeyboardButton(text='Отменить изменение', callback_data="users")])
-    await call.message.edit_text(text=text, reply_markup=keyboard)
+
+    if text == "Список пользователей пуст.":
+        await call.message.edit_text(text=text, reply_markup=admin_kb.users)
+    else:
+        keyboard.inline_keyboard.append(admin_kb.cancel_users)
+        await call.message.edit_text(text=text, reply_markup=keyboard)
 
 
 # Выбран пользователь из списка inline-кнопок, выводим список параметров пользователя, в виде списка inline-кнопок
@@ -567,10 +573,11 @@ async def got_new_user_info_and_update(msg: Message, state: FSMContext):
 async def view_users(call: CallbackQuery, page_number=0):
     text, keyboard = await show_users_with_pagination(call=call, page_number=page_number, action="view_user")
 
-    if not text == "Список пользователей пуст.":
+    if text == "Список пользователей пуст.":
         await call.message.edit_text(text=text, reply_markup=admin_kb.users)
-    keyboard.inline_keyboard.append(admin_kb.cancel_users)
-    await call.message.edit_text(text=text, reply_markup=keyboard)
+    else:
+        keyboard.inline_keyboard.append(admin_kb.cancel_users)
+        await call.message.edit_text(text=text, reply_markup=keyboard)
 
 
 # Выбран пользователь из списка inline-кнопок, выводим информацию о нем, в виде сообщения
@@ -611,7 +618,6 @@ async def select_recipient(call: CallbackQuery, state: FSMContext):
 @admin_router.message(StateFilter(NewsForm.waiting_for_recipients))
 async def got_recipients(msg: Message, state: FSMContext):
     await state.update_data(waiting_for_recipients=msg.text.replace(" ", "").split(","))
-    data = await state.get_data()
     await msg.answer(text="Пользователи получены", reply_markup=admin_kb.news)
 
 
@@ -648,7 +654,7 @@ async def send_news(call: CallbackQuery, state: FSMContext):
     await call.message.edit_text(text=(text_news + recipients_list), reply_markup=admin_kb.send_news)
 
 
-# Отправка сообщения всем указанным пользователям( всем, кто начал чат с ботом)
+# Отправка сообщения всем указанным пользователям(всем, кто начал чат с ботом)
 @admin_router.callback_query(F.data == "sending_news")
 async def sending_news(call: CallbackQuery, state: FSMContext):
     news_data = await state.get_data()
@@ -704,7 +710,6 @@ async def show_news_with_pagination(call: CallbackQuery, page_number: int, actio
             button = InlineKeyboardButton(text=f"Новость от {date}",
                                           callback_data=f"{action}_of_{date}")
             keyboard.inline_keyboard.append([button])
-            print(button.text, button.callback_data)
         # Добавляем кнопки переключения страниц
         prev_button = InlineKeyboardButton(text="<< Пред. стр.", callback_data=f"prev_page_{page_number}_page_{action}")
         next_button = InlineKeyboardButton(text="След. стр. >>", callback_data=f"next_page_{page_number}_page_{action}")
@@ -722,10 +727,12 @@ async def show_news_with_pagination(call: CallbackQuery, page_number: int, actio
 async def view_news(call: CallbackQuery, page_number=0):
     text, keyboard = await show_news_with_pagination(call=call, page_number=page_number, action="view_news")
 
-    if not text == "Список новостей пуст.":
+    if text == "Список новостей пуст.":
+        await call.message.edit_text(text=text, reply_markup=InlineKeyboardMarkup(inline_keyboard=[admin_kb.cancel_news]))
+    else:
         keyboard.inline_keyboard.append(
             [InlineKeyboardButton(text='Назад', callback_data="news")])
-    await call.message.edit_text(text=text, reply_markup=keyboard)
+        await call.message.edit_text(text=text, reply_markup=keyboard)
 
 
 # Вывод информации о новости, выбранной из списка

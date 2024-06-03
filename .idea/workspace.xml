@@ -4,7 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="48ef15c6-25ef-455c-b1bb-7752d8020320" name="Changes" comment="Add full code" />
+    <list default="true" id="48ef15c6-25ef-455c-b1bb-7752d8020320" name="Changes" comment="Add full code">
+      <change afterPath="$PROJECT_DIR$/.venv/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.venv/pyvenv.cfg" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scr/bot/handlers/admin_handler.py" beforeDir="false" afterPath="$PROJECT_DIR$/scr/bot/handlers/admin_handler.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/students.db" beforeDir="false" afterPath="$PROJECT_DIR$/students.db" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -28,6 +34,19 @@
     </option>
   </component>
   <component name="Git.Settings">
+    <excluded-from-favorite>
+      <branch-storage>
+        <map>
+          <entry type="LOCAL">
+            <value>
+              <list>
+                <branch-info repo="$PROJECT_DIR$" source="master" />
+              </list>
+            </value>
+          </entry>
+        </map>
+      </branch-storage>
+    </excluded-from-favorite>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
@@ -149,7 +168,23 @@
       <option name="project" value="LOCAL" />
       <updated>1716927290075</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="Add full code">
+      <option name="closed" value="true" />
+      <created>1716927543706</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1716927543706</updated>
+    </task>
+    <task id="LOCAL-00006" summary="Add full code">
+      <option name="closed" value="true" />
+      <created>1716927754787</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1716927754787</updated>
+    </task>
+    <option name="localTasksCounter" value="7" />
     <servers />
   </component>
   <component name="UnknownFeatures">
